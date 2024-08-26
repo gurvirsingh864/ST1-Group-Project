@@ -4,7 +4,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
+import streamlit as st
+import joblib
 
 # 1. Reading the dataset
 uso_data = pd.read_csv('FINAL_USO.csv')
@@ -81,7 +85,9 @@ kf = KFold(n_splits=5, shuffle=True, random_state=42)
 
 # 13. Investigating multiple Regression algorithms
 models = {
-    'Linear Regression': LinearRegression()
+    'Linear Regression': LinearRegression(),
+    'Decision Tree': DecisionTreeRegressor(random_state=42),
+    'Random Forest': RandomForestRegressor(random_state=42)
 }
 
 # 14. Selection of the best model
@@ -103,6 +109,25 @@ if best_model is not None:
     y_pred = best_model.predict(X_test)
     print(f'Best Model: {best_model.__class__.__name__}')
     print(f'Mean Squared Error on Test Set: {mean_squared_error(y_test, y_pred)}')
+    
+    # Save the model
+    joblib.dump(best_model, 'uso_price_model.pkl')
+    print("Model saved successfully.")
 else:
     print("No valid model was selected.")
 
+# 15. Streamlit Deployment
+st.title('USO Closing Price Prediction')
+st.write('Input the features to predict the closing price of USO.')
+
+# Create input fields dynamically based on selected features
+input_data = {}
+for feature in selected_features:
+    input_data[feature] = st.number_input(feature)
+
+# Predict button
+if st.button('Predict'):
+    model = joblib.load('uso_price_model.pkl')
+    input_df = pd.DataFrame([input_data])
+    prediction = model.predict(input_df)[0]
+    st.write(f'Predicted USO Closing Price: ${prediction:.2f}')
